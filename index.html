@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>gogadget Repair</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --text: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --primary: #0f172a;
+            --primary-hover: #1e293b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --accent: #6366f1;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+            --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Login */
+        .login-screen {
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .login-card {
+            background: var(--card);
+            padding: 40px 32px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        }
+        .login-logo {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .login-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+        
+        /* App */
+        .app { display: none; }
+        .app.active { display: block; }
+        
+        /* Header */
+        .header {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-inner {
+            max-width: 640px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        .btn-success:hover { opacity: 0.9; }
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        .btn-danger:hover { opacity: 0.9; }
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover { background: var(--bg); }
+        .btn-sm { padding: 8px 12px; font-size: 13px; }
+        .btn-block { width: 100%; }
+        
+        /* Main */
+        .main {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Search */
+        .search-container {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 14px 16px;
+            padding-left: 44px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 15px;
+            font-family: inherit;
+            background: var(--card);
+            transition: all 0.2s;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        
+        /* Nav */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .nav-btn {
+            padding: 12px 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .nav-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .card-body { padding: 20px; }
+        
+        /* Forms */
+        .form-group { margin-bottom: 16px; }
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            font-family: inherit;
+            background: var(--card);
+            transition: all 0.2s;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+        .form-textarea { min-height: 80px; resize: vertical; }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        @media (max-width: 480px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+        
+        /* Ticket List */
+        .ticket-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .ticket-item:last-child { border-bottom: none; }
+        .ticket-item:hover { background: var(--bg); }
+        .ticket-item:active { background: #e2e8f0; }
+        .ticket-main { flex: 1; }
+        .ticket-id {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        .ticket-customer {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .ticket-right { text-align: right; }
+        .ticket-device {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        
+        /* Status */
+        .status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .status-received { background: #dbeafe; color: #1e40af; }
+        .status-diagnosing { background: #fef3c7; color: #92400e; }
+        .status-in_progress { background: #e0e7ff; color: #4338ca; }
+        .status-waiting_parts { background: #fee2e2; color: #b91c1c; }
+        .status-ready_pickup { background: #d1fae5; color: #047857; }
+        .status-completed { background: #dcfce7; color: #15803d; }
+        
+        /* Pages */
+        .page { display: none; }
+        .page.active { display: block; }
+        
+        /* Back Link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+        .back-link:hover { color: var(--text); }
+        
+        /* Ticket Detail */
+        .detail-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .detail-ticket-num {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .detail-date {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 400px) {
+            .detail-grid { grid-template-columns: 1fr; }
+        }
+        .detail-item label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .detail-item span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .detail-section {
+            margin-bottom: 24px;
+        }
+        .detail-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .issue-box {
+            background: var(--bg);
+            padding: 14px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+        }
+        
+        /* Parts */
+        .part-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+        .part-item:last-child { border-bottom: none; }
+        .parts-total {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 0;
+            font-weight: 600;
+            border-top: 2px solid var(--border);
+            margin-top: 8px;
+        }
+        
+        /* Notes */
+        .note-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .note-item:last-child { border-bottom: none; }
+        .note-date {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .note-text { font-size: 14px; }
+        .note-input-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .note-input-row input { flex: 1; }
+        
+        /* Actions */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+        }
+        
+        /* Empty */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+        
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .stat-value.green { color: var(--success); }
+        
+        /* Signature */
+        .signature-box {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: #fafafa;
+            margin-bottom: 10px;
+        }
+        #signaturePad {
+            width: 100%;
+            height: 120px;
+            cursor: crosshair;
+            touch-action: none;
+        }
+        
+        /* Terms */
+        .terms-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            max-height: 140px;
+            overflow-y: auto;
+            font-size: 13px;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+        .terms-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .terms-check input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+        }
+        
+        /* Selected Parts */
+        .selected-part {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg);
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .selected-part .remove {
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+        .parts-add-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .parts-add-row select { flex: 1; }
+        
+        /* QR */
+        .qr-box {
+            text-align: center;
+            padding: 16px;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            margin-bottom: 20px;
+        }
+        .qr-box canvas { max-width: 100px; }
+        
+        /* Print */
+        .print-preview {
+            display: none;
+            background: white;
+            padding: 20px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        .print-preview.show { display: block; }
+        .print-preview h3 { margin: 0 0 4px 0; font-size: 16px; }
+        .print-preview .sub { font-size: 11px; color: #666; }
+        .print-preview .num { font-size: 20px; font-weight: bold; margin: 12px 0; }
+        .print-preview .info { font-size: 12px; margin: 4px 0; }
+        
+        @media print {
+            body * { visibility: hidden; }
+            .print-preview, .print-preview * { visibility: visible; }
+            .print-preview {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 3in;
+            }
+        }
+        
+        /* Low Stock */
+        .low-stock { color: var(--danger); font-weight: 600; }
+        
+        /* Alert */
+        .alert {
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .alert-warning { background: #fef3c7; color: #92400e; }
+        .alert-error { background: #fee2e2; color: #b91c1c; }
+        
+        /* Inventory Form */
+        .inv-form {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loginScreen" class="login-screen">
+        <div class="login-card">
+            <div class="login-logo">gogadget</div>
+            <p class="login-subtitle">Repair Management System</p>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="loginEmail" class="form-input" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="loginPassword" class="form-input" required autocomplete="current-password">
+                </div>
+                <div id="loginError" class="alert alert-error" style="display:none"></div>
+                <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="app" class="app">
+        <header class="header">
+            <div class="header-inner">
+                <div class="logo">gogadget</div>
+                <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <main class="main">
+            <!-- Dashboard -->
+            <div id="pageDashboard" class="page active">
+                <div class="search-container">
+                    <svg class="search-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search tickets...">
+                </div>
+                
+                <div class="nav-grid">
+                    <button class="nav-btn active" data-page="dashboard">Tickets</button>
+                    <button class="nav-btn" data-page="newTicket">+ New</button>
+                    <button class="nav-btn" data-page="inventory">Parts</button>
+                    <button class="nav-btn" data-page="statistics">Stats</button>
+                </div>
+                
+                <div class="card">
+                    <div id="ticketsList"></div>
+                </div>
+            </div>
+
+            <!-- New Ticket -->
+            <div id="pageNewTicket" class="page">
+                <span class="back-link" onclick="showPage('dashboard')">← Back</span>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">New Repair Ticket</span></div>
+                    <div class="card-body">
+                        <form id="newTicketForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">First Name</label>
+                                    <input type="text" id="firstName" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Last Name</label>
+                                    <input type="text" id="lastName" class="form-input" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Phone</label>
+                                    <input type="tel" id="phone" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" id="email" class="form-input">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Device</label>
+                                    <select id="deviceType" class="form-select" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Serial #</label>
+                                    <input type="text" id="serialNumber" class="form-input">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Issue Description</label>
+                                <textarea id="issueDescription" class="form-textarea" placeholder="What's wrong?"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Parts</label>
+                                <div class="parts-add-row">
+                                    <select id="partSelect" class="form-select"></select>
+                                    <button type="button" class="btn btn-ghost btn-sm" onclick="addPartToTicket()">Add</button>
+                                </div>
+                                <div id="selectedParts"></div>
+                                <div id="partsTotal" style="display:none" class="parts-total">
+                                    <span>Total</span>
+                                    <span id="totalAmount">$0.00</span>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Terms & Conditions</label>
+                                <div class="terms-box">
+                                    <strong>gogadget Repair Terms</strong><br><br>
+                                    1. Diagnostic fee may apply if repair is declined.<br>
+                                    2. Customer is responsible for data backup.<br>
+                                    3. 30-day warranty on parts and labor.<br>
+                                    4. Unclaimed devices after 30 days may be recycled.<br>
+                                    5. Payment due upon pickup.
+                                </div>
+                                <label class="terms-check">
+                                    <input type="checkbox" id="termsAgree" required>
+                                    <span>Customer agrees to terms</span>
+                                </label>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Signature</label>
+                                <div class="signature-box"><canvas id="signaturePad"></canvas></div>
+                                <button type="button" class="btn btn-ghost btn-sm" onclick="clearSignature()">Clear</button>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-success btn-block">Create Ticket</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ticket Detail -->
+            <div id="pageTicketDetail" class="page">
+                <span class="back-link" onclick="showPage('dashboard')">← Back</span>
+                <div id="ticketDetailContent"></div>
+            </div>
+
+            <!-- Inventory -->
+            <div id="pageInventory" class="page">
+                <span class="back-link" onclick="showPage('dashboard')">← Back</span>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Inventory</span>
+                        <button class="btn btn-primary btn-sm" onclick="showPartForm()">+ Add</button>
+                    </div>
+                    <div id="lowStockAlert"></div>
+                    <div id="inventoryList" class="card-body"></div>
+                </div>
+                <div id="partFormContainer"></div>
+            </div>
+
+            <!-- Statistics -->
+            <div id="pageStatistics" class="page">
+                <span class="back-link" onclick="showPage('dashboard')">← Back</span>
+                <div id="statsContent"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://squjvthzvscuamlvmypt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNxdWp2dGh6dnNjdWFtbHZteXB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxODE3ODIsImV4cCI6MjA4MTc1Nzc4Mn0.MTiEmv7dTlTCc9Ct7Ni8so3pUv7y9MSMmJj1m4jdzEM';
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+        let inventoryData = [];
+        let selectedParts = [];
+        let currentTicketId = null;
+
+        const DEVICES = ['PS5','PS5 Slim','PS5 Pro','PS4','PS4 Slim','PS4 Pro','Xbox Series X','Xbox Series S','Xbox One','Xbox One S','Xbox One X','Nintendo Switch','Nintendo Switch OLED','Nintendo Switch Lite','Steam Deck','iPad','iPad Pro','iPad Air','iPad Mini','Android Tablet','DJI Drone','Other'];
+        const STATUSES = [
+            {v:'received',l:'Received'},
+            {v:'diagnosing',l:'Diagnosing'},
+            {v:'in_progress',l:'In Progress'},
+            {v:'waiting_parts',l:'Waiting Parts'},
+            {v:'ready_pickup',l:'Ready'},
+            {v:'completed',l:'Completed'}
+        ];
+
+        // AUTH
+        async function checkAuth() {
+            const { data: { session } } = await db.auth.getSession();
+            if (session) { currentUser = session.user; initApp(); }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const pwd = document.getElementById('loginPassword').value;
+            const err = document.getElementById('loginError');
+            err.style.display = 'none';
+            
+            const { data, error } = await db.auth.signInWithPassword({ email, password: pwd });
+            if (error) {
+                err.textContent = error.message;
+                err.style.display = 'block';
+            } else {
+                currentUser = data.user;
+                initApp();
+            }
+        });
+
+        async function logout() {
+            await db.auth.signOut();
+            location.reload();
+        }
+
+        function initApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('app').classList.add('active');
+            loadDeviceSelect();
+            loadInventoryData();
+            loadTickets();
+            initSignaturePad();
+        }
+
+        // NAVIGATION
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => showPage(btn.dataset.page));
+        });
+
+        function showPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            const el = document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1));
+            if (el) el.classList.add('active');
+            
+            const btn = document.querySelector(`.nav-btn[data-page="${page}"]`);
+            if (btn) btn.classList.add('active');
+            
+            if (page === 'dashboard') loadTickets();
+            if (page === 'inventory') loadInventoryList();
+            if (page === 'statistics') loadStatistics();
+            if (page === 'newTicket') resetTicketForm();
+        }
+
+        // DEVICES
+        function loadDeviceSelect() {
+            const sel = document.getElementById('deviceType');
+            sel.innerHTML = '<option value="">Select device...</option>' + DEVICES.map(d => `<option value="${d}">${d}</option>`).join('');
+        }
+
+        // INVENTORY DATA (for parts dropdown)
+        async function loadInventoryData() {
+            const { data } = await db.from('inventory').select('*').order('name');
+            inventoryData = data || [];
+            updatePartSelect();
+        }
+
+        function updatePartSelect() {
+            const sel = document.getElementById('partSelect');
+            const available = inventoryData.filter(p => p.quantity > 0);
+            sel.innerHTML = '<option value="">Select part...</option>' + available.map(p => 
+                `<option value="${p.id}" data-name="${p.name}" data-price="${p.sell_price || 0}">${p.name} - $${(p.sell_price || 0).toFixed(2)} (${p.quantity})</option>`
+            ).join('');
+        }
+
+        // TICKETS LIST
+        async function loadTickets() {
+            const { data, error } = await db.from('tickets').select('*').order('created_at', { ascending: false }).limit(50);
+            const container = document.getElementById('ticketsList');
+            
+            if (error) {
+                container.innerHTML = `<div class="empty-state">Error loading tickets</div>`;
+                return;
+            }
+            
+            if (!data || data.length === 0) {
+                container.innerHTML = `<div class="empty-state">No tickets yet</div>`;
+                return;
+            }
+            
+            container.innerHTML = data.map(t => `
+                <div class="ticket-item" onclick="openTicket('${t.id}')">
+                    <div class="ticket-main">
+                        <div class="ticket-id">${t.ticket_number}</div>
+                        <div class="ticket-customer">${t.customer_name}</div>
+                    </div>
+                    <div class="ticket-right">
+                        <div class="ticket-device">${t.device_type}</div>
+                        <span class="status status-${t.status}">${getStatusLabel(t.status)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // SEARCH
+        document.getElementById('searchInput').addEventListener('input', async (e) => {
+            const q = e.target.value.trim();
+            if (q.length < 2) { loadTickets(); return; }
+            
+            const { data } = await db.from('tickets').select('*')
+                .or(`customer_name.ilike.%${q}%,ticket_number.ilike.%${q}%,customer_phone.ilike.%${q}%`)
+                .order('created_at', { ascending: false }).limit(20);
+            
+            const container = document.getElementById('ticketsList');
+            if (!data || data.length === 0) {
+                container.innerHTML = `<div class="empty-state">No results for "${q}"</div>`;
+                return;
+            }
+            
+            container.innerHTML = data.map(t => `
+                <div class="ticket-item" onclick="openTicket('${t.id}')">
+                    <div class="ticket-main">
+                        <div class="ticket-id">${t.ticket_number}</div>
+                        <div class="ticket-customer">${t.customer_name}</div>
+                    </div>
+                    <div class="ticket-right">
+                        <div class="ticket-device">${t.device_type}</div>
+                        <span class="status status-${t.status}">${getStatusLabel(t.status)}</span>
+                    </div>
+                </div>
+            `).join('');
+        });
+
+        // NEW TICKET
+        function resetTicketForm() {
+            document.getElementById('newTicketForm').reset();
+            selectedParts = [];
+            renderSelectedParts();
+            clearSignature();
+            loadInventoryData();
+        }
+
+        function addPartToTicket() {
+            const sel = document.getElementById('partSelect');
+            if (!sel.value) return;
+            
+            const opt = sel.options[sel.selectedIndex];
+            const part = {
+                id: sel.value,
+                name: opt.dataset.name,
+                price: parseFloat(opt.dataset.price) || 0
+            };
+            
+            if (selectedParts.find(p => p.id === part.id)) return;
+            selectedParts.push(part);
+            renderSelectedParts();
+            sel.value = '';
+        }
+
+        function removePart(id) {
+            selectedParts = selectedParts.filter(p => p.id !== id);
+            renderSelectedParts();
+        }
+
+        function renderSelectedParts() {
+            const container = document.getElementById('selectedParts');
+            const totalDiv = document.getElementById('partsTotal');
+            
+            if (selectedParts.length === 0) {
+                container.innerHTML = '';
+                totalDiv.style.display = 'none';
+                return;
+            }
+            
+            container.innerHTML = selectedParts.map(p => `
+                <div class="selected-part">
+                    <span>${p.name} - $${p.price.toFixed(2)}</span>
+                    <button type="button" class="remove" onclick="removePart('${p.id}')">&times;</button>
+                </div>
+            `).join('');
+            
+            const total = selectedParts.reduce((sum, p) => sum + p.price, 0);
+            document.getElementById('totalAmount').textContent = '$' + total.toFixed(2);
+            totalDiv.style.display = 'flex';
+        }
+
+        document.getElementById('newTicketForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Generate ticket number
+            const year = new Date().getFullYear().toString().slice(-2);
+            const { data: last } = await db.from('tickets').select('ticket_number').order('created_at', { ascending: false }).limit(1);
+            
+            let num = 1;
+            if (last && last.length > 0) {
+                const m = last[0].ticket_number.match(/G(\d+)-/);
+                if (m) num = parseInt(m[1]) + 1;
+            }
+            const ticketNum = 'G' + String(num).padStart(4, '0') + '-' + year;
+            
+            const total = selectedParts.reduce((sum, p) => sum + p.price, 0);
+            
+            const ticketData = {
+                ticket_number: ticketNum,
+                customer_name: document.getElementById('firstName').value.trim() + ' ' + document.getElementById('lastName').value.trim(),
+                customer_phone: document.getElementById('phone').value.trim(),
+                customer_email: document.getElementById('email').value.trim() || null,
+                device_type: document.getElementById('deviceType').value,
+                device_serial: document.getElementById('serialNumber').value.trim() || null,
+                issue_description: document.getElementById('issueDescription').value.trim() || null,
+                status: 'received',
+                total_cost: total,
+                parts_used: JSON.stringify(selectedParts),
+                notes: JSON.stringify([]),
+                signature_data: getSignatureData()
+            };
+            
+            const { data: ticket, error } = await db.from('tickets').insert(ticketData).select().single();
+            
+            if (error) {
+                alert('Error: ' + error.message);
+                return;
+            }
+            
+            // Update inventory
+            for (const part of selectedParts) {
+                const inv = inventoryData.find(i => i.id === part.id);
+                if (inv) {
+                    await db.from('inventory').update({ quantity: inv.quantity - 1 }).eq('id', part.id);
+                }
+            }
+            
+            alert('Ticket ' + ticketNum + ' created!');
+            openTicket(ticket.id);
+        });
+
+        // TICKET DETAIL
+        async function openTicket(id) {
+            currentTicketId = id;
+            const { data: t, error } = await db.from('tickets').select('*').eq('id', id).single();
+            
+            if (error || !t) {
+                alert('Ticket not found');
+                return;
+            }
+            
+            const parts = JSON.parse(t.parts_used || '[]');
+            const notes = JSON.parse(t.notes || '[]');
+            
+            let html = `
+                <div class="card">
+                    <div class="card-body">
+                        <div class="detail-header">
+                            <div>
+                                <div class="detail-ticket-num">${t.ticket_number}</div>
+                                <div class="detail-date">${formatDate(t.created_at)}</div>
+                            </div>
+                            <select id="statusSelect" class="form-select" style="width:auto" onchange="updateStatus()">
+                                ${STATUSES.map(s => `<option value="${s.v}" ${t.status === s.v ? 'selected' : ''}>${s.l}</option>`).join('')}
+                            </select>
+                        </div>
+                        
+                        <div class="detail-grid">
+                            <div class="detail-item"><label>Customer</label><span>${t.customer_name}</span></div>
+                            <div class="detail-item"><label>Phone</label><span>${t.customer_phone}</span></div>
+                            <div class="detail-item"><label>Device</label><span>${t.device_type}</span></div>
+                            <div class="detail-item"><label>Serial</label><span>${t.device_serial || '—'}</span></div>
+                        </div>
+                        
+                        ${t.issue_description ? `<div class="detail-section"><div class="detail-section-title">Issue</div><div class="issue-box">${t.issue_description}</div></div>` : ''}
+                        
+                        <div class="qr-box"><canvas id="ticketQR"></canvas></div>
+                        
+                        <div class="detail-section">
+                            <div class="detail-section-title">Parts Used</div>
+                            ${parts.length > 0 ? parts.map(p => `<div class="part-item"><span>${p.name}</span><span>$${(p.price || 0).toFixed(2)}</span></div>`).join('') + `<div class="parts-total"><span>Total</span><span>$${(t.total_cost || 0).toFixed(2)}</span></div>` : '<div class="empty-state" style="padding:20px">No parts added</div>'}
+                        </div>
+                        
+                        <div class="detail-section">
+                            <div class="detail-section-title">Tech Notes</div>
+                            ${notes.length > 0 ? notes.map(n => `<div class="note-item"><div class="note-date">${n.date}</div><div class="note-text">${n.text}</div></div>`).join('') : '<div class="empty-state" style="padding:20px">No notes yet</div>'}
+                            <div class="note-input-row">
+                                <input type="text" id="noteInput" class="form-input" placeholder="Add a note...">
+                                <button class="btn btn-ghost btn-sm" onclick="addNote()">Add</button>
+                            </div>
+                        </div>
+                        
+                        <div class="print-preview" id="printPreview">
+                            <h3>gogadget</h3>
+                            <div class="sub">Game Console Repair</div>
+                            <div class="num">${t.ticket_number}</div>
+                            <canvas id="printQR"></canvas>
+                            <div class="info">${t.customer_name}</div>
+                            <div class="info">${t.device_type}</div>
+                            <div class="info">${formatDate(t.created_at)}</div>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button class="btn btn-ghost" onclick="printTicket()">Print</button>
+                            <button class="btn btn-danger" onclick="deleteTicket()">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('ticketDetailContent').innerHTML = html;
+            showPage('ticketDetail');
+            
+            setTimeout(() => {
+                try {
+                    QRCode.toCanvas(document.getElementById('ticketQR'), t.ticket_number, { width: 100, margin: 1 });
+                    QRCode.toCanvas(document.getElementById('printQR'), t.ticket_number, { width: 80, margin: 1 });
+                } catch(e) { console.log('QR error:', e); }
+            }, 100);
+        }
+
+        async function updateStatus() {
+            const status = document.getElementById('statusSelect').value;
+            await db.from('tickets').update({ status }).eq('id', currentTicketId);
+        }
+
+        async function addNote() {
+            const input = document.getElementById('noteInput');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            const { data: t } = await db.from('tickets').select('notes').eq('id', currentTicketId).single();
+            const notes = JSON.parse(t.notes || '[]');
+            notes.push({ text, date: new Date().toLocaleString() });
+            
+            await db.from('tickets').update({ notes: JSON.stringify(notes) }).eq('id', currentTicketId);
+            openTicket(currentTicketId);
+        }
+
+        async function deleteTicket() {
+            if (!confirm('Delete this ticket permanently?')) return;
+            await db.from('tickets').delete().eq('id', currentTicketId);
+            showPage('dashboard');
+        }
+
+        function printTicket() {
+            document.getElementById('printPreview').classList.add('show');
+            setTimeout(() => {
+                window.print();
+                document.getElementById('printPreview').classList.remove('show');
+            }, 100);
+        }
+
+        // INVENTORY
+        async function loadInventoryList() {
+            const { data } = await db.from('inventory').select('*').order('name');
+            inventoryData = data || [];
+            
+            const container = document.getElementById('inventoryList');
+            const alertDiv = document.getElementById('lowStockAlert');
+            
+            if (inventoryData.length === 0) {
+                container.innerHTML = '<div class="empty-state">No parts in inventory</div>';
+                alertDiv.innerHTML = '';
+                return;
+            }
+            
+            const lowStock = inventoryData.filter(p => p.quantity <= (p.min_stock || 5));
+            alertDiv.innerHTML = lowStock.length > 0 ? `<div class="alert alert-warning" style="margin:16px">Low stock: ${lowStock.map(p => p.name).join(', ')}</div>` : '';
+            
+            container.innerHTML = `
+                <table style="width:100%;border-collapse:collapse;font-size:14px">
+                    <thead>
+                        <tr style="border-bottom:1px solid var(--border)">
+                            <th style="text-align:left;padding:12px 0;color:var(--text-muted);font-size:12px">Part</th>
+                            <th style="text-align:right;padding:12px 0;color:var(--text-muted);font-size:12px">Stock</th>
+                            <th style="text-align:right;padding:12px 0;color:var(--text-muted);font-size:12px">Price</th>
+                            <th style="width:60px"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${inventoryData.map(p => `
+                            <tr style="border-bottom:1px solid var(--border)">
+                                <td style="padding:12px 0">${p.name}</td>
+                                <td style="padding:12px 0;text-align:right" class="${p.quantity <= (p.min_stock || 5) ? 'low-stock' : ''}">${p.quantity}</td>
+                                <td style="padding:12px 0;text-align:right">$${(p.sell_price || 0).toFixed(2)}</td>
+                                <td style="padding:12px 0;text-align:right"><button class="btn btn-ghost btn-sm" onclick="editPart('${p.id}')">Edit</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function showPartForm(part = null) {
+            const container = document.getElementById('partFormContainer');
+            container.innerHTML = `
+                <div class="inv-form">
+                    <div style="font-weight:600;margin-bottom:16px">${part ? 'Edit' : 'Add'} Part</div>
+                    <form id="partForm">
+                        <input type="hidden" id="partId" value="${part ? part.id : ''}">
+                        <div class="form-group">
+                            <label class="form-label">Name</label>
+                            <input type="text" id="partName" class="form-input" value="${part ? part.name : ''}" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" id="partQty" class="form-input" value="${part ? part.quantity : 0}" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Price</label>
+                                <input type="number" id="partPrice" class="form-input" value="${part ? part.sell_price || '' : ''}" step="0.01" min="0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Low Stock Alert</label>
+                            <input type="number" id="partMinStock" class="form-input" value="${part ? part.min_stock || 5 : 5}" min="0">
+                        </div>
+                        <div style="display:flex;gap:8px">
+                            <button type="submit" class="btn btn-success">Save</button>
+                            <button type="button" class="btn btn-ghost" onclick="hidePartForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            document.getElementById('partForm').addEventListener('submit', savePart);
+        }
+
+        function hidePartForm() {
+            document.getElementById('partFormContainer').innerHTML = '';
+        }
+
+        function editPart(id) {
+            const part = inventoryData.find(p => p.id === id);
+            if (part) showPartForm(part);
+        }
+
+        async function savePart(e) {
+            e.preventDefault();
+            const id = document.getElementById('partId').value;
+            const data = {
+                name: document.getElementById('partName').value.trim(),
+                quantity: parseInt(document.getElementById('partQty').value) || 0,
+                sell_price: parseFloat(document.getElementById('partPrice').value) || 0,
+                min_stock: parseInt(document.getElementById('partMinStock').value) || 5
+            };
+            
+            if (id) {
+                await db.from('inventory').update(data).eq('id', id);
+            } else {
+                await db.from('inventory').insert(data);
+            }
+            
+            hidePartForm();
+            loadInventoryList();
+        }
+
+        // STATISTICS
+        async function loadStatistics() {
+            const now = new Date();
+            const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            
+            const { count: total } = await db.from('tickets').select('*', { count: 'exact', head: true });
+            const { count: week } = await db.from('tickets').select('*', { count: 'exact', head: true }).gte('created_at', weekStart.toISOString());
+            const { count: month } = await db.from('tickets').select('*', { count: 'exact', head: true }).gte('created_at', monthStart.toISOString());
+            const { data: completed } = await db.from('tickets').select('total_cost').eq('status', 'completed').gte('created_at', monthStart.toISOString());
+            
+            const revenue = (completed || []).reduce((sum, t) => sum + (t.total_cost || 0), 0);
+            
+            const { data: deviceData } = await db.from('tickets').select('device_type').gte('created_at', monthStart.toISOString());
+            const counts = {};
+            (deviceData || []).forEach(t => { counts[t.device_type] = (counts[t.device_type] || 0) + 1; });
+            const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+            
+            document.getElementById('statsContent').innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-label">Total Tickets</div><div class="stat-value">${total || 0}</div></div>
+                    <div class="stat-card"><div class="stat-label">This Week</div><div class="stat-value">${week || 0}</div></div>
+                    <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value">${month || 0}</div></div>
+                    <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value green">$${revenue.toFixed(2)}</div></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Repairs by Device</span></div>
+                    <div class="card-body">
+                        ${sorted.length > 0 ? sorted.map(([d, c]) => `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span>${d}</span><strong>${c}</strong></div>`).join('') : '<div class="empty-state">No data</div>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // SIGNATURE
+        let sigCtx = null, drawing = false;
+        function initSignaturePad() {
+            const canvas = document.getElementById('signaturePad');
+            sigCtx = canvas.getContext('2d');
+            
+            function resize() {
+                const rect = canvas.parentElement.getBoundingClientRect();
+                canvas.width = rect.width - 2;
+                canvas.height = 120;
+                sigCtx.strokeStyle = '#000';
+                sigCtx.lineWidth = 2;
+                sigCtx.lineCap = 'round';
+            }
+            resize();
+            window.addEventListener('resize', resize);
+            
+            let lastX, lastY;
+            const getPos = e => {
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches ? e.touches[0] : e;
+                return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+            };
+            
+            const start = e => { drawing = true; const p = getPos(e); lastX = p.x; lastY = p.y; };
+            const move = e => {
+                if (!drawing) return;
+                e.preventDefault();
+                const p = getPos(e);
+                sigCtx.beginPath();
+                sigCtx.moveTo(lastX, lastY);
+                sigCtx.lineTo(p.x, p.y);
+                sigCtx.stroke();
+                lastX = p.x; lastY = p.y;
+            };
+            const stop = () => { drawing = false; };
+            
+            canvas.addEventListener('mousedown', start);
+            canvas.addEventListener('mousemove', move);
+            canvas.addEventListener('mouseup', stop);
+            canvas.addEventListener('mouseout', stop);
+            canvas.addEventListener('touchstart', start, { passive: false });
+            canvas.addEventListener('touchmove', move, { passive: false });
+            canvas.addEventListener('touchend', stop);
+        }
+
+        function clearSignature() {
+            const canvas = document.getElementById('signaturePad');
+            if (sigCtx) sigCtx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function getSignatureData() {
+            return document.getElementById('signaturePad').toDataURL();
+        }
+
+        // UTILS
+        function formatDate(d) {
+            return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function getStatusLabel(s) {
+            const found = STATUSES.find(x => x.v === s);
+            return found ? found.l : s;
+        }
+
+        // INIT
+        checkAuth();
+    </script>
+</body>
+</html>
