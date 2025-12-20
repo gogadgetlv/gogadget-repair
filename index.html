@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gogadget - Repair Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--primary:#374151;--primary-hover:#1f2937;--success:#059669;--success-hover:#047857;--warning:#d97706;--danger:#dc2626;--danger-hover:#b91c1c;--bg:#f3f4f6;--card:#fff;--text:#111827;--text-mid:#374151;--text-light:#4b5563;--border:#d1d5db;--radius:6px}
+        body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.4}
+        .login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+        .login-card{background:var(--card);padding:32px;border-radius:var(--radius);border:1px solid var(--border);width:100%;max-width:360px}
+        .login-logo{font-size:24px;font-weight:700;color:var(--text);text-align:center;margin-bottom:4px}
+        .login-subtitle{text-align:center;color:var(--text-light);margin-bottom:24px;font-size:13px}
+        .app{display:none}.app.active{display:block}
+        .header{background:var(--card);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:100}
+        .header-inner{max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+        .logo{font-size:18px;font-weight:700;color:var(--text)}
+        .header-actions{display:flex;gap:8px;align-items:center}
+        .user-info{font-size:12px;color:var(--text-light);display:none}
+        @media(min-width:600px){.user-info{display:block}}
+        .btn{padding:8px 14px;border:none;border-radius:var(--radius);font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s}
+        .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-hover)}
+        .btn-success{background:var(--success);color:#fff}.btn-success:hover{background:var(--success-hover)}
+        .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:var(--danger-hover)}
+        .btn-secondary{background:#e5e7eb;color:var(--text)}.btn-secondary:hover{background:#d1d5db}
+        .btn-sm{padding:6px 10px;font-size:12px}
+        .btn-block{width:100%;justify-content:center}
+        .main{max-width:800px;margin:0 auto;padding:16px}
+        .search-bar{margin-bottom:16px}
+        .search-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;font-family:inherit}
+        .search-input:focus{outline:none;border-color:var(--primary)}
+        .nav-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+        .nav-btn{padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-weight:500;color:var(--text-mid);cursor:pointer}
+        .nav-btn:hover{background:#f9fafb}
+        .nav-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+        .card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:16px}
+        .card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+        .card-title{font-size:14px;font-weight:600}
+        .card-body{padding:16px}
+        .form-group{margin-bottom:12px}
+        .form-label{display:block;font-size:12px;font-weight:500;color:var(--text-mid);margin-bottom:4px}
+        .form-input,.form-select,.form-textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;font-family:inherit}
+        .form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--primary)}
+        .form-textarea{resize:vertical;min-height:60px}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        @media(max-width:500px){.form-row{grid-template-columns:1fr}}
+        .table-wrap{overflow-x:auto}
+        table{width:100%;border-collapse:collapse;font-size:13px}
+        th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
+        th{font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;background:#f9fafb}
+        tr:hover{background:#f9fafb}tr.clickable{cursor:pointer}
+        .status{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:500}
+        .status-received{background:#dbeafe;color:#1e40af}
+        .status-diagnosing{background:#fef3c7;color:#92400e}
+        .status-in_progress{background:#e0e7ff;color:#3730a3}
+        .status-waiting_parts{background:#fee2e2;color:#991b1b}
+        .status-ready_pickup{background:#d1fae5;color:#065f46}
+        .status-completed{background:#dcfce7;color:#166534}
+        .page{display:none}.page.active{display:block}
+        .ticket-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+        .ticket-number{font-size:16px;font-weight:700;color:var(--text)}
+        .ticket-meta{font-size:12px;color:var(--text-light)}
+        .ticket-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+        .info-item label{display:block;font-size:11px;color:var(--text-light);margin-bottom:2px}
+        .info-item span{font-size:13px;font-weight:500}
+        .notes-list{list-style:none;margin-bottom:12px}
+        .note-item{padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+        .note-item:last-child{border-bottom:none}
+        .note-meta{font-size:11px;color:var(--text-light);margin-bottom:2px}
+        .parts-list{margin-bottom:12px}
+        .part-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+        .part-row:last-child{border-bottom:none}
+        .add-part-row{display:flex;gap:8px;margin-top:8px}
+        .add-part-row select{flex:1}
+        .signature-container{border:1px solid var(--border);border-radius:var(--radius);background:#fafafa;margin-bottom:8px}
+        #signaturePad{width:100%;height:120px;cursor:crosshair;touch-action:none}
+        .terms-box{background:#f9fafb;border:1px solid var(--border);border-radius:var(--radius);padding:12px;max-height:150px;overflow-y:auto;font-size:12px;margin-bottom:12px}
+        .terms-check{display:flex;align-items:flex-start;gap:8px;margin-bottom:12px;font-size:13px}
+        .terms-check input{margin-top:2px}
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+        .stat-card{background:var(--card);padding:16px;border-radius:var(--radius);border:1px solid var(--border)}
+        .stat-label{font-size:11px;color:var(--text-light);margin-bottom:2px}
+        .stat-value{font-size:22px;font-weight:700}
+        .stat-value.success{color:var(--success)}
+        .alert{padding:10px 12px;border-radius:var(--radius);margin-bottom:12px;font-size:13px}
+        .alert-warning{background:#fef3c7;color:#92400e}
+        .alert-success{background:#d1fae5;color:#065f46}
+        .alert-danger{background:#fee2e2;color:#991b1b}
+        .empty{text-align:center;padding:32px 16px;color:var(--text-light);font-size:13px}
+        .back-link{display:inline-flex;align-items:center;gap:4px;color:var(--text-light);font-size:13px;text-decoration:none;margin-bottom:12px;cursor:pointer}
+        .back-link:hover{color:var(--text)}
+        .low-stock{color:var(--danger);font-weight:600}
+        .qr-container{text-align:center;margin:16px 0}
+        .qr-container canvas{max-width:80px}
+        .print-section{background:#fff;padding:16px;border:1px solid var(--border);border-radius:var(--radius);margin-top:16px}
+        .print-ticket-content{text-align:center;font-family:Arial,sans-serif}
+        .print-ticket-content h2{font-size:14px;margin:0 0 4px 0}
+        .print-ticket-content .ticket-num{font-size:16px;font-weight:bold;margin:8px 0}
+        .print-ticket-content .detail{font-size:11px;margin:4px 0}
+        @media print{body *{visibility:hidden}.print-section,.print-section *{visibility:visible}.print-section{position:absolute;left:0;top:0;width:3in;border:none;padding:8px}.btn{display:none!important}}
+        .selected-parts{margin-top:12px}
+        .selected-part{display:flex;justify-content:space-between;align-items:center;padding:8px;background:#f9fafb;border-radius:var(--radius);margin-bottom:6px;font-size:13px}
+        .selected-part button{background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px}
+        .total-row{display:flex;justify-content:space-between;padding:12px 0;font-weight:600;border-top:1px solid var(--border);margin-top:8px}
+        .action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+    </style>
+</head>
+<body>
+    <div id="loginScreen" class="login-screen">
+        <div class="login-card">
+            <div class="login-logo">gogadget</div>
+            <p class="login-subtitle">Repair Management</p>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="loginEmail" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="loginPassword" class="form-input" required>
+                </div>
+                <div id="loginError" class="alert alert-danger" style="display:none;"></div>
+                <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="app" class="app">
+        <header class="header">
+            <div class="header-inner">
+                <div class="logo">gogadget</div>
+                <div class="header-actions">
+                    <span class="user-info" id="userEmail"></span>
+                    <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main">
+            <div id="pageDashboard" class="page active">
+                <div class="search-bar">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search name, phone, or ticket #...">
+                </div>
+                <div class="nav-row">
+                    <button class="nav-btn active" data-page="dashboard">Tickets</button>
+                    <button class="nav-btn" data-page="newTicket">+ New</button>
+                    <button class="nav-btn" data-page="inventory">Inventory</button>
+                    <button class="nav-btn" data-page="statistics">Stats</button>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Recent Tickets</span></div>
+                    <div class="card-body">
+                        <div class="table-wrap">
+                            <table>
+                                <thead><tr><th>Ticket</th><th>Customer</th><th>Device</th><th>Status</th></tr></thead>
+                                <tbody id="ticketsList"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pageNewTicket" class="page">
+                <span class="back-link" onclick="showPage('dashboard')">← Back</span>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">New Ticket</span></div>
+                    <div class="card-body">
+                        <form id="newTicketForm">
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label">First Name *</label><input type="text" id="firstName" class="form-input" required></div>
+                                <div class="form-group"><label class="form-label">Last Name *</label><input type="text" id="lastName" class="form-input" required></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label">Phone *</label><input type="tel" id="phone" class="form-input" required></div>
+                                <div class="form-group"><label class="form-label">Email</label><input type="email" id="email" class="form-input"></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label">Device *</label><select id="deviceType" class="form-select" required><option value="">Select...</option></select></div>
+                                <div class="form-group"><label class="form-label">Serial #</label><input type="text" id="serialNumber" class="form-input"></div>
+                            </div>
+                            <div class="form-group"><label class="form-label">Issue</label><textarea id="issueDescription" class="form-textarea" placeholder="Describe the problem..."></textarea></div>
+                            <div class="form-group">
+                                <label class="form-label">Parts Used</label>
+                                <div class="add-part-row">
+                                    <select id="partSelect" class="form-select"><option value="">Select part...</option></select>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addPartToNew()">Add</button>
+                                </div>
+                                <div id="selectedParts" class="selected-parts"></div>
+                                <div id="partsTotal" class="total-row" style="display:none;"><span>Total:</span><span id="totalAmount">$0.00</span></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Terms & Conditions</label>
+                                <div class="terms-box"><p><strong>gogadget Repair Terms</strong></p><p>1. Diagnostic fee may apply if repair declined.</p><p>2. Customer responsible for data backup.</p><p>3. 30-day warranty on parts and labor.</p><p>4. Devices unclaimed after 30 days may be recycled.</p><p>5. Payment due at pickup.</p></div>
+                                <div class="terms-check"><input type="checkbox" id="termsAgree" required><label for="termsAgree">Customer agrees to terms</label></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Signature</label>
+                                <div class="signature-container"><canvas id="signaturePad"></canvas></div>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="clearSignature()">Clear</button>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-block">Create Ticket</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pageTicketDetail" class="page">
+                <span class="back-link" onclick="showPage('dashboard')">← Back</span>
+                <div id="ticketDetailContent"></div>
+            </div>
+
+            <div id="pageInventory" class="page">
+                <span class="back-link" onclick="showPage('dashboard')">← Back</span>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Inventory</span><button class="btn btn-primary btn-sm" onclick="showAddPart()">+ Add</button></div>
+                    <div id="lowStockAlert"></div>
+                    <div class="card-body">
+                        <div class="table-wrap">
+                            <table><thead><tr><th>Name</th><th>Stock</th><th>Price</th><th></th></tr></thead><tbody id="inventoryTable"></tbody></table>
+                        </div>
+                    </div>
+                </div>
+                <div id="partFormCard" class="card" style="display:none;">
+                    <div class="card-header"><span class="card-title" id="partFormTitle">Add Part</span></div>
+                    <div class="card-body">
+                        <form id="partForm">
+                            <input type="hidden" id="partId">
+                            <div class="form-group"><label class="form-label">Part Name *</label><input type="text" id="partName" class="form-input" required></div>
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label">Quantity</label><input type="number" id="partQty" class="form-input" value="0" min="0"></div>
+                                <div class="form-group"><label class="form-label">Price ($)</label><input type="number" id="partPrice" class="form-input" step="0.01" min="0"></div>
+                            </div>
+                            <div class="form-group"><label class="form-label">Min Stock Alert</label><input type="number" id="partMinStock" class="form-input" value="5" min="0"></div>
+                            <div style="display:flex;gap:8px;"><button type="submit" class="btn btn-success">Save</button><button type="button" class="btn btn-secondary" onclick="hidePartForm()">Cancel</button></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pageStatistics" class="page">
+                <span class="back-link" onclick="showPage('dashboard')">← Back</span>
+                <div class="stats-grid" id="statsGrid"></div>
+                <div class="card"><div class="card-header"><span class="card-title">Repairs by Device</span></div><div class="card-body" id="deviceStats"></div></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://squjvthzvscuamlvmypt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNxdWp2dGh6dnNjdWFtbHZteXB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxODE3ODIsImV4cCI6MjA4MTc1Nzc4Mn0.MTiEmv7dTlTCc9Ct7Ni8so3pUv7y9MSMmJj1m4jdzEM';
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+        let inventory = [];
+        let selectedParts = [];
+        let currentTicketId = null;
+
+        const DEVICES = ['PS5','PS5 Slim','PS5 Pro','PS4','PS4 Slim','PS4 Pro','Xbox Series X','Xbox Series S','Xbox One','Xbox One S','Xbox One X','Nintendo Switch','Nintendo Switch OLED','Nintendo Switch Lite','Steam Deck','iPad','iPad Pro','iPad Air','iPad Mini','Android Tablet','DJI Drone','Other'];
+        const STATUS_OPTIONS = [{value:'received',label:'Received'},{value:'diagnosing',label:'Diagnosing'},{value:'in_progress',label:'In Progress'},{value:'waiting_parts',label:'Waiting Parts'},{value:'ready_pickup',label:'Ready'},{value:'completed',label:'Completed'}];
+
+        async function checkAuth() {
+            const { data: { session } } = await db.auth.getSession();
+            if (session) { currentUser = session.user; showApp(); }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const err = document.getElementById('loginError');
+            const { data, error } = await db.auth.signInWithPassword({ email, password });
+            if (error) { err.textContent = error.message; err.style.display = 'block'; }
+            else { currentUser = data.user; showApp(); }
+        });
+
+        async function logout() { await db.auth.signOut(); location.reload(); }
+
+        function showApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('app').classList.add('active');
+            document.getElementById('userEmail').textContent = currentUser.email;
+            loadDevices(); loadInventory(); loadTickets(); initSignature();
+        }
+
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => showPage(btn.dataset.page));
+        });
+
+        function showPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            const pageEl = document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1));
+            if (pageEl) pageEl.classList.add('active');
+            const navBtn = document.querySelector('.nav-btn[data-page="'+page+'"]');
+            if (navBtn) navBtn.classList.add('active');
+            if (page === 'dashboard') loadTickets();
+            if (page === 'inventory') loadInventory();
+            if (page === 'statistics') loadStats();
+            if (page === 'newTicket') { resetNewTicketForm(); loadInventoryForSelect(); }
+        }
+
+        function loadDevices() {
+            const s = document.getElementById('deviceType');
+            s.innerHTML = '<option value="">Select...</option>' + DEVICES.map(d => '<option value="'+d+'">'+d+'</option>').join('');
+        }
+
+        async function loadTickets() {
+            const { data } = await db.from('tickets').select('*').order('created_at', { ascending: false }).limit(50);
+            const tbody = document.getElementById('ticketsList');
+            if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">No tickets</td></tr>'; return; }
+            tbody.innerHTML = data.map(t => '<tr class="clickable" onclick="openTicket(\''+t.id+'\')"><td><strong>'+t.ticket_number+'</strong></td><td>'+t.customer_name+'</td><td>'+t.device_type+'</td><td><span class="status status-'+t.status+'">'+formatStatus(t.status)+'</span></td></tr>').join('');
+        }
+
+        document.getElementById('searchInput').addEventListener('input', async (e) => {
+            const q = e.target.value.trim();
+            if (q.length < 2) { loadTickets(); return; }
+            const { data } = await db.from('tickets').select('*').or('customer_name.ilike.%'+q+'%,ticket_number.ilike.%'+q+'%,customer_phone.ilike.%'+q+'%').order('created_at', { ascending: false }).limit(20);
+            const tbody = document.getElementById('ticketsList');
+            if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">No results</td></tr>'; return; }
+            tbody.innerHTML = data.map(t => '<tr class="clickable" onclick="openTicket(\''+t.id+'\')"><td><strong>'+t.ticket_number+'</strong></td><td>'+t.customer_name+'</td><td>'+t.device_type+'</td><td><span class="status status-'+t.status+'">'+formatStatus(t.status)+'</span></td></tr>').join('');
+        });
+
+        function resetNewTicketForm() {
+            document.getElementById('newTicketForm').reset();
+            selectedParts = [];
+            renderSelectedParts();
+            clearSignature();
+        }
+
+        async function loadInventoryForSelect() {
+            const { data } = await db.from('inventory').select('*').gt('quantity', 0).order('name');
+            inventory = data || [];
+            const s = document.getElementById('partSelect');
+            s.innerHTML = '<option value="">Select part...</option>' + inventory.map(p => '<option value="'+p.id+'" data-price="'+(p.sell_price||0)+'" data-name="'+p.name+'">'+p.name+' ($'+(p.sell_price||0)+') - '+p.quantity+' left</option>').join('');
+        }
+
+        function addPartToNew() {
+            const s = document.getElementById('partSelect');
+            if (!s.value) return;
+            const opt = s.options[s.selectedIndex];
+            const id = s.value, name = opt.dataset.name, price = parseFloat(opt.dataset.price) || 0;
+            if (selectedParts.find(p => p.id === id)) return;
+            selectedParts.push({ id, name, price });
+            renderSelectedParts();
+            s.value = '';
+        }
+
+        function removePartFromNew(id) {
+            selectedParts = selectedParts.filter(p => p.id !== id);
+            renderSelectedParts();
+        }
+
+        function renderSelectedParts() {
+            const c = document.getElementById('selectedParts');
+            const t = document.getElementById('partsTotal');
+            if (!selectedParts.length) { c.innerHTML = ''; t.style.display = 'none'; return; }
+            c.innerHTML = selectedParts.map(p => '<div class="selected-part"><span>'+p.name+' - $'+p.price.toFixed(2)+'</span><button type="button" onclick="removePartFromNew(\''+p.id+'\')">&times;</button></div>').join('');
+            const total = selectedParts.reduce((sum, p) => sum + p.price, 0);
+            document.getElementById('totalAmount').textContent = '$' + total.toFixed(2);
+            t.style.display = 'flex';
+        }
+
+        document.getElementById('newTicketForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const device = document.getElementById('deviceType').value;
+            const serial = document.getElementById('serialNumber').value.trim();
+            const issue = document.getElementById('issueDescription').value.trim();
+            const signature = getSignatureData();
+
+            const year = new Date().getFullYear().toString().slice(-2);
+            const { data: lastTicket } = await db.from('tickets').select('ticket_number').order('created_at', { ascending: false }).limit(1);
+            let nextNum = 1;
+            if (lastTicket && lastTicket.length) {
+                const match = lastTicket[0].ticket_number.match(/G(\d+)-/);
+                if (match) nextNum = parseInt(match[1]) + 1;
+            }
+            const ticketNumber = 'G' + String(nextNum).padStart(4, '0') + '-' + year;
+            const total = selectedParts.reduce((sum, p) => sum + p.price, 0);
+
+            const { data: ticket, error } = await db.from('tickets').insert({
+                ticket_number: ticketNumber,
+                customer_name: firstName + ' ' + lastName,
+                customer_phone: phone,
+                customer_email: email || null,
+                device_type: device,
+                device_serial: serial || null,
+                issue_description: issue || null,
+                status: 'received',
+                total_cost: total,
+                signature_data: signature,
+                parts_used: JSON.stringify(selectedParts),
+                notes: JSON.stringify([])
+            }).select().single();
+
+            if (error) { alert('Error: ' + error.message); return; }
+
+            for (const part of selectedParts) {
+                await db.from('inventory').update({ quantity: inventory.find(i => i.id === part.id).quantity - 1 }).eq('id', part.id);
+            }
+
+            alert('Ticket ' + ticketNumber + ' created!');
+            openTicket(ticket.id);
+        });
+
+        async function openTicket(id) {
+            currentTicketId = id;
+            const { data: ticket, error } = await db.from('tickets').select('*').eq('id', id).single();
+            if (error || !ticket) { alert('Ticket not found'); return; }
+
+            const parts = JSON.parse(ticket.parts_used || '[]');
+            const notes = JSON.parse(ticket.notes || '[]');
+
+            document.getElementById('ticketDetailContent').innerHTML = '<div class="card"><div class="card-body">' +
+                '<div class="ticket-header"><div><div class="ticket-number">'+ticket.ticket_number+'</div><div class="ticket-meta">'+formatDate(ticket.created_at)+'</div></div>' +
+                '<select id="statusSelect" class="form-select" style="width:auto;" onchange="saveStatus()">' + STATUS_OPTIONS.map(s => '<option value="'+s.value+'"'+(ticket.status===s.value?' selected':'')+'>'+s.label+'</option>').join('') + '</select></div>' +
+                '<div class="ticket-info"><div class="info-item"><label>Customer</label><span>'+ticket.customer_name+'</span></div><div class="info-item"><label>Phone</label><span>'+ticket.customer_phone+'</span></div><div class="info-item"><label>Device</label><span>'+ticket.device_type+'</span></div><div class="info-item"><label>Serial</label><span>'+(ticket.device_serial||'-')+'</span></div></div>' +
+                (ticket.issue_description ? '<p style="margin-bottom:16px"><strong>Issue:</strong> '+ticket.issue_description+'</p>' : '') +
+                '<div class="qr-container"><canvas id="ticketQR"></canvas></div>' +
+                '<div style="margin-bottom:16px"><label class="form-label">Parts</label><div class="parts-list">' + (parts.length ? parts.map(p => '<div class="part-row"><span>'+p.name+'</span><span>$'+p.price.toFixed(2)+'</span></div>').join('') : '<div class="empty">No parts</div>') + '</div>' + (parts.length ? '<div class="total-row"><span>Total:</span><span>$'+ticket.total_cost.toFixed(2)+'</span></div>' : '') + '</div>' +
+                '<div style="margin-bottom:16px"><label class="form-label">Notes</label><ul class="notes-list" id="notesList">' + (notes.length ? notes.map(n => '<li class="note-item"><div class="note-meta">'+n.date+'</div><div>'+n.text+'</div></li>').join('') : '<li class="empty">No notes</li>') + '</ul><div style="display:flex;gap:8px;margin-top:8px"><input type="text" id="newNoteInput" class="form-input" placeholder="Add note..."><button class="btn btn-secondary btn-sm" onclick="addNote()">Add</button></div></div>' +
+                '<div class="print-section"><div class="print-ticket-content"><h2>gogadget</h2><div class="detail">Game Console Repair</div><div class="ticket-num">'+ticket.ticket_number+'</div><canvas id="printQR" style="margin:8px auto;"></canvas><div class="detail">'+ticket.customer_name+'</div><div class="detail">'+ticket.device_type+'</div><div class="detail">'+formatDate(ticket.created_at)+'</div></div><button class="btn btn-secondary btn-block" style="margin-top:12px" onclick="window.print()">Print Ticket</button></div>' +
+                '<div class="action-row"><button class="btn btn-danger" onclick="deleteTicket(\''+ticket.id+'\')">Delete Ticket</button></div>' +
+                '</div></div>';
+
+            showPage('ticketDetail');
+            setTimeout(() => {
+                QRCode.toCanvas(document.getElementById('ticketQR'), ticket.ticket_number, { width: 80, margin: 1 });
+                QRCode.toCanvas(document.getElementById('printQR'), ticket.ticket_number, { width: 80, margin: 1 });
+            }, 100);
+        }
+
+        async function saveStatus() {
+            const status = document.getElementById('statusSelect').value;
+            await db.from('tickets').update({ status }).eq('id', currentTicketId);
+        }
+
+        async function addNote() {
+            const input = document.getElementById('newNoteInput');
+            const text = input.value.trim();
+            if (!text) return;
+            const { data: ticket } = await db.from('tickets').select('notes').eq('id', currentTicketId).single();
+            const notes = JSON.parse(ticket.notes || '[]');
+            notes.push({ text, date: new Date().toLocaleString() });
+            await db.from('tickets').update({ notes: JSON.stringify(notes) }).eq('id', currentTicketId);
+            input.value = '';
+            openTicket(currentTicketId);
+        }
+
+        async function deleteTicket(id) {
+            if (!confirm('Delete this ticket?')) return;
+            await db.from('tickets').delete().eq('id', id);
+            showPage('dashboard');
+        }
+
+        async function loadInventory() {
+            const { data } = await db.from('inventory').select('*').order('name');
+            inventory = data || [];
+            const tbody = document.getElementById('inventoryTable');
+            const alertDiv = document.getElementById('lowStockAlert');
+            if (!inventory.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">No parts</td></tr>'; alertDiv.innerHTML = ''; return; }
+            const lowStock = inventory.filter(i => i.quantity <= (i.min_stock || 5));
+            alertDiv.innerHTML = lowStock.length ? '<div class="alert alert-warning" style="margin:12px">Low stock: '+lowStock.map(i => i.name).join(', ')+'</div>' : '';
+            tbody.innerHTML = inventory.map(i => '<tr><td>'+i.name+'</td><td class="'+(i.quantity <= (i.min_stock||5) ? 'low-stock' : '')+'">'+i.quantity+'</td><td>$'+(i.sell_price||0).toFixed(2)+'</td><td><button class="btn btn-secondary btn-sm" onclick="editPart(\''+i.id+'\')">Edit</button></td></tr>').join('');
+        }
+
+        function showAddPart() {
+            document.getElementById('partFormTitle').textContent = 'Add Part';
+            document.getElementById('partForm').reset();
+            document.getElementById('partId').value = '';
+            document.getElementById('partFormCard').style.display = 'block';
+        }
+
+        function hidePartForm() { document.getElementById('partFormCard').style.display = 'none'; }
+
+        function editPart(id) {
+            const part = inventory.find(p => p.id === id);
+            if (!part) return;
+            document.getElementById('partFormTitle').textContent = 'Edit Part';
+            document.getElementById('partId').value = part.id;
+            document.getElementById('partName').value = part.name;
+            document.getElementById('partQty').value = part.quantity;
+            document.getElementById('partPrice').value = part.sell_price || '';
+            document.getElementById('partMinStock').value = part.min_stock || 5;
+            document.getElementById('partFormCard').style.display = 'block';
+        }
+
+        document.getElementById('partForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('partId').value;
+            const data = {
+                name: document.getElementById('partName').value.trim(),
+                quantity: parseInt(document.getElementById('partQty').value) || 0,
+                sell_price: parseFloat(document.getElementById('partPrice').value) || 0,
+                min_stock: parseInt(document.getElementById('partMinStock').value) || 5
+            };
+            if (id) { await db.from('inventory').update(data).eq('id', id); }
+            else { await db.from('inventory').insert(data); }
+            hidePartForm();
+            loadInventory();
+        });
+
+        async function loadStats() {
+            const now = new Date();
+            const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay());
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const { count: total } = await db.from('tickets').select('*', { count: 'exact', head: true });
+            const { count: week } = await db.from('tickets').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString());
+            const { count: month } = await db.from('tickets').select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth.toISOString());
+            const { data: completed } = await db.from('tickets').select('total_cost').eq('status', 'completed').gte('created_at', startOfMonth.toISOString());
+            const revenue = completed ? completed.reduce((sum, t) => sum + (t.total_cost || 0), 0) : 0;
+            document.getElementById('statsGrid').innerHTML = '<div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">'+(total||0)+'</div></div><div class="stat-card"><div class="stat-label">This Week</div><div class="stat-value">'+(week||0)+'</div></div><div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value">'+(month||0)+'</div></div><div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value success">$'+revenue.toFixed(2)+'</div></div>';
+            const { data: tickets } = await db.from('tickets').select('device_type').gte('created_at', startOfMonth.toISOString());
+            const deviceCounts = {};
+            (tickets || []).forEach(t => { deviceCounts[t.device_type] = (deviceCounts[t.device_type] || 0) + 1; });
+            const sorted = Object.entries(deviceCounts).sort((a, b) => b[1] - a[1]);
+            document.getElementById('deviceStats').innerHTML = sorted.length ? '<table><thead><tr><th>Device</th><th>Count</th></tr></thead><tbody>' + sorted.map(([d, c]) => '<tr><td>'+d+'</td><td>'+c+'</td></tr>').join('') + '</tbody></table>' : '<div class="empty">No data</div>';
+        }
+
+        let signatureCtx = null, isDrawing = false;
+        function initSignature() {
+            const canvas = document.getElementById('signaturePad');
+            signatureCtx = canvas.getContext('2d');
+            const resize = () => { const rect = canvas.parentElement.getBoundingClientRect(); canvas.width = rect.width - 2; canvas.height = 120; signatureCtx.strokeStyle = '#000'; signatureCtx.lineWidth = 2; signatureCtx.lineCap = 'round'; };
+            resize(); window.addEventListener('resize', resize);
+            let lastX, lastY;
+            const getPos = (e) => { const rect = canvas.getBoundingClientRect(); return { x: (e.touches ? e.touches[0].clientX : e.clientX) - rect.left, y: (e.touches ? e.touches[0].clientY : e.clientY) - rect.top }; };
+            const start = (e) => { isDrawing = true; const pos = getPos(e); lastX = pos.x; lastY = pos.y; };
+            const draw = (e) => { if (!isDrawing) return; e.preventDefault(); const pos = getPos(e); signatureCtx.beginPath(); signatureCtx.moveTo(lastX, lastY); signatureCtx.lineTo(pos.x, pos.y); signatureCtx.stroke(); lastX = pos.x; lastY = pos.y; };
+            const stop = () => { isDrawing = false; };
+            canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseup', stop); canvas.addEventListener('mouseout', stop);
+            canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', draw); canvas.addEventListener('touchend', stop);
+        }
+        function clearSignature() { const canvas = document.getElementById('signaturePad'); signatureCtx.clearRect(0, 0, canvas.width, canvas.height); }
+        function getSignatureData() { return document.getElementById('signaturePad').toDataURL(); }
+
+        function formatDate(d) { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+        function formatStatus(s) { const map = { received: 'Received', diagnosing: 'Diagnosing', in_progress: 'In Progress', waiting_parts: 'Waiting Parts', ready_pickup: 'Ready', completed: 'Completed' }; return map[s] || s; }
+
+        checkAuth();
+    </script>
+</body>
+</html>
